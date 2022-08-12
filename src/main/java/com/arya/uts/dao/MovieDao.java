@@ -1,120 +1,97 @@
 package com.arya.uts.dao;
 
-import com.arya.uts.model.Movie;
-import com.arya.uts.model.User;
-import com.arya.uts.utility.DatabaseConnection;
+import com.arya.uts.model.MovieEntity;
+import com.arya.uts.utility.HibernateUtility;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
-public class MovieDao implements DaoInterface<Movie>{
-
-    private final Connection connection = DatabaseConnection.getConnection();
+public class MovieDao implements DaoInterface<MovieEntity>{
 
     @Override
-    public Integer addData(Movie data) {
-        String query = "INSERT INTO movie(Title, Genre, Durasi) VALUES(?, ?, ?)";
-        PreparedStatement preparedStatement;
+    public Integer addData(MovieEntity data) {
         int result = 0;
-
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, data.getTitle());
-            preparedStatement.setString(2, data.getGenre());
-            preparedStatement.setInt(3, data.getDurasi());
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.save(data);
+            transaction.commit();
+            result = 1;
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
         return result;
     }
 
     @Override
-    public ObservableList<Movie> getData() {
-        ObservableList<Movie> movies = FXCollections.observableArrayList();
+    public ObservableList<MovieEntity> getData() {
+        ObservableList<MovieEntity> movies = FXCollections.observableArrayList();
+        Session session = HibernateUtility.getSession();
 
-        String query = "SELECT * FROM movie";
-        PreparedStatement preparedStatement;
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<MovieEntity> query = builder.createQuery(MovieEntity.class);
+        query.from(MovieEntity.class);
 
-        try {
-            preparedStatement = connection.prepareStatement(query);
-            ResultSet result = preparedStatement.executeQuery();
-            while (result.next()) {
-                movies.add(
-                        new Movie(
-                                result.getInt("idMovie"),
-                                result.getString("Title"),
-                                result.getString("Genre"),
-                                result.getInt("Durasi")
-                        )
-                );
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+        movies.addAll(session.createQuery(query).getResultList());
+        session.close();
         return movies;
     }
 
     @Override
-    public void updateData(Movie data) {
-        String query = "UPDATE movie " +
-                "SET Title = ?, Genre = ?, Durasi = ? " +
-                "WHERE idMovie = ?";
-        PreparedStatement preparedStatement;
-
+    public void updateData(MovieEntity data) {
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, data.getTitle());
-            preparedStatement.setString(2, data.getGenre());
-            preparedStatement.setInt(3, data.getDurasi());
-            preparedStatement.setInt(4, data.getId());
-            int result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.update(data);
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
     }
 
     @Override
-    public Integer delData(Movie data) {
-        String query = "DELETE FROM movie WHERE idMovie = ?";
-        PreparedStatement preparedStatement;
+    public Integer delData(MovieEntity data) {
         int result = 0;
-
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, data.getId());
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.delete(data);
+            transaction.commit();
+            result = 1;
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
         return result;
     }
 
     public ObservableList<String> getGenres() {
+        ObservableList<MovieEntity> movies = FXCollections.observableArrayList();
         ObservableList<String> genres = FXCollections.observableArrayList();
 
-        String query = "SELECT genre FROM movie";
-        PreparedStatement preparedStatement;
+        Session session = HibernateUtility.getSession();
 
-        try {
-            preparedStatement = connection.prepareStatement(query);
-            ResultSet result = preparedStatement.executeQuery();
-            while (result.next()) {
-                String genre1 = result.getString("genre");
-                String[] genre2 = genre1.split("[,]", 0);
-                for (String g: genre2) {
-                    if (!genres.contains(g.trim())) {
-                        genres.add(g.trim());
-                    }
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<MovieEntity> query = builder.createQuery(MovieEntity.class);
+        query.from(MovieEntity.class);
+
+        movies.addAll(session.createQuery(query).getResultList());
+        session.close();
+
+        for (MovieEntity movie : movies) {
+            String genre1 = movie.getGenre();
+            String[] genre2 = genre1.split("[,]", 0);
+            for (String g: genre2) {
+                if (!genres.contains(g.trim())) {
+                    genres.add(g.trim());
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return genres;

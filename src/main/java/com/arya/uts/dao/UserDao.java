@@ -1,92 +1,74 @@
 package com.arya.uts.dao;
 
-import com.arya.uts.model.User;
-import com.arya.uts.utility.DatabaseConnection;
+import com.arya.uts.model.UserEntity;
+import com.arya.uts.utility.HibernateUtility;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
-public class UserDao implements DaoInterface<User> {
-
-    private final Connection connection = DatabaseConnection.getConnection();
+public class UserDao implements DaoInterface<UserEntity> {
 
     @Override
-    public Integer addData(User data) {
-        String query = "INSERT INTO user(UserName, UserPassword) VALUES(?, ?)";
-        PreparedStatement preparedStatement;
+    public Integer addData(UserEntity data) {
         int result = 0;
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, data.getUsername());
-            preparedStatement.setString(2, data.getPassword());
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.save(data);
+            transaction.commit();
+            result = 1;
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
         return result;
     }
 
     @Override
-    public ObservableList<User> getData() {
-        ObservableList<User> users = FXCollections.observableArrayList();
+    public ObservableList<UserEntity> getData() {
+        ObservableList<UserEntity> users = FXCollections.observableArrayList();
+        Session session = HibernateUtility.getSession();
 
-        String query = "SELECT * FROM user";
-        PreparedStatement preparedStatement;
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> query = builder.createQuery(UserEntity.class);
+        query.from(UserEntity.class);
 
-        try {
-            preparedStatement = connection.prepareStatement(query);
-            ResultSet result = preparedStatement.executeQuery();
-            while (result.next()) {
-                users.add(
-                        new User(
-                                result.getInt("idUser"),
-                                result.getString("UserName"),
-                                result.getString("UserPassword")
-                        )
-                );
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        users.addAll(session.createQuery(query).getResultList());
+        session.close();
 
         return users;
     }
 
     @Override
-    public void updateData(User data) {
-        String query = "UPDATE user " +
-                "SET UserName = ?, UserPassword = ? " +
-                "WHERE idUser = ?";
-        PreparedStatement preparedStatement;
-
+    public void updateData(UserEntity data) {
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, data.getUsername());
-            preparedStatement.setString(2, data.getPassword());
-            preparedStatement.setInt(3, data.getId());
-            int result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.update(data);
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
     }
 
     @Override
-    public Integer delData(User data) {
-        String query = "DELETE FROM user WHERE idUser = ?";
-        PreparedStatement preparedStatement;
+    public Integer delData(UserEntity data) {
         int result = 0;
-
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, data.getId());
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.delete(data);
+            transaction.commit();
+            result = 1;
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
         return result;
     }
 }

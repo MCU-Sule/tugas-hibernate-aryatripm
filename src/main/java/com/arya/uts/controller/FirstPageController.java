@@ -4,9 +4,7 @@ import com.arya.uts.Application;
 import com.arya.uts.dao.MovieDao;
 import com.arya.uts.dao.UserDao;
 import com.arya.uts.dao.WatchlistDao;
-import com.arya.uts.model.Movie;
-import com.arya.uts.model.User;
-import com.arya.uts.model.Watchlist;
+import com.arya.uts.model.*;
 import com.arya.uts.utility.DatabaseConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -31,20 +29,20 @@ import java.util.Map;
 public class FirstPageController {
 
     public ComboBox<String> cmbGenre;
-    public ListView<User> lvUser;
-    public TableView<Movie> table1;
-    public TableView<Watchlist> table2;
-    public TableColumn<Movie, String> MovieTitleColumn;
-    public TableColumn<Movie, String> MovieGenreColumn;
-    public TableColumn<Movie, Integer> MovieDurasiColumn;
-    public TableColumn<Watchlist, String> WatchlistTitleColumn;
-    public TableColumn<Watchlist, Integer> WatchlistLastwatchColumn;
-    public TableColumn<Watchlist, Boolean> WatchlistFavoriteColumn;
+    public ListView<UserEntity> lvUser;
+    public TableView<MovieEntity> table1;
+    public TableView<WatchListEntity> table2;
+    public TableColumn<MovieEntity, String> MovieTitleColumn;
+    public TableColumn<MovieEntity, String> MovieGenreColumn;
+    public TableColumn<MovieEntity, Integer> MovieDurasiColumn;
+    public TableColumn<WatchListEntity, String> WatchlistTitleColumn;
+    public TableColumn<WatchListEntity, Integer> WatchlistLastwatchColumn;
+    public TableColumn<WatchListEntity, Boolean> WatchlistFavoriteColumn;
 
     private ObservableList<String> genres;
-    private ObservableList<User> users;
-    private ObservableList<Movie> movies;
-    private ObservableList<Watchlist> watchlist;
+    private ObservableList<UserEntity> users;
+    private ObservableList<MovieEntity> movies;
+    private ObservableList<WatchListEntity> watchlist;
 
     private UserDao userDao;
     private MovieDao movieDao;
@@ -67,13 +65,13 @@ public class FirstPageController {
         table1.setItems(movies);
         table2.setItems(watchlist);
 
-        MovieTitleColumn.setCellValueFactory(new PropertyValueFactory<Movie, String>("title"));
-        MovieGenreColumn.setCellValueFactory(new PropertyValueFactory<Movie, String>("genre"));
-        MovieDurasiColumn.setCellValueFactory(new PropertyValueFactory<Movie, Integer>("durasi"));
+        MovieTitleColumn.setCellValueFactory(new PropertyValueFactory<MovieEntity, String>("title"));
+        MovieGenreColumn.setCellValueFactory(new PropertyValueFactory<MovieEntity, String>("genre"));
+        MovieDurasiColumn.setCellValueFactory(new PropertyValueFactory<MovieEntity, Integer>("durasi"));
 
-        WatchlistTitleColumn.setCellValueFactory(new PropertyValueFactory<Watchlist, String>("movie"));
-        WatchlistLastwatchColumn.setCellValueFactory(new PropertyValueFactory<Watchlist, Integer>("lastWatchPerDurasi"));
-        WatchlistFavoriteColumn.setCellValueFactory(new PropertyValueFactory<Watchlist, Boolean>("favorite"));
+        WatchlistTitleColumn.setCellValueFactory(new PropertyValueFactory<WatchListEntity, String>("movieByMovieIdMovie"));
+        WatchlistLastwatchColumn.setCellValueFactory(new PropertyValueFactory<WatchListEntity, Integer>("lastWatchPerDurasi"));
+        WatchlistFavoriteColumn.setCellValueFactory(new PropertyValueFactory<WatchListEntity, Boolean>("favorite"));
     }
 
     public void changeCombo(ActionEvent actionEvent) {
@@ -96,8 +94,7 @@ public class FirstPageController {
         stage.showAndWait();
 
         if (secondPageController.isSubmit) {
-            int result = userDao.addData(new User(
-                    0,
+            int result = userDao.addData(new UserEntity(
                     secondPageController.txtUserName.getText(),
                     secondPageController.txtPassword.getText()
             ));
@@ -140,9 +137,9 @@ public class FirstPageController {
         if (!lvUser.getSelectionModel().getSelectedItems().isEmpty()) {
             watchlist = watchlistDao.getData();
 
-            User user = lvUser.getSelectionModel().getSelectedItem();
+            UserEntity user = lvUser.getSelectionModel().getSelectedItem();
 
-            watchlist = watchlist.filtered(watchlist1 -> watchlist1.getUser().getId().equals(user.getId()));
+            watchlist = watchlist.filtered(watchlist1 -> watchlist1.getUserByUserIdUser().getIdUser().equals(user.getIdUser()));
 
             table2.setItems(watchlist);
         }

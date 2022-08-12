@@ -9,8 +9,5 @@
         <module name="uts" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="uts" target="12" />
-    </bytecodeTargetLevel>
   </component>
 </project>

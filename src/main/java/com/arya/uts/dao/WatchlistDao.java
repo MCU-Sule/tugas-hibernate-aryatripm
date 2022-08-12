@@ -1,112 +1,76 @@
 package com.arya.uts.dao;
 
-import com.arya.uts.model.Movie;
-import com.arya.uts.model.User;
-import com.arya.uts.model.Watchlist;
-import com.arya.uts.utility.DatabaseConnection;
+
+import com.arya.uts.model.MovieEntity;
+import com.arya.uts.model.WatchListEntity;
+import com.arya.uts.utility.HibernateUtility;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
-public class WatchlistDao implements DaoInterface<Watchlist> {
+public class WatchlistDao implements DaoInterface<WatchListEntity> {
 
-    private final Connection connection = DatabaseConnection.getConnection();
 
     @Override
-    public Integer addData(Watchlist data) {
-        String query = "INSERT INTO watchlist(LastWatch, Favorite, Movie_idMovie, User_idUser) VALUES(?, ?, ?, ?)";
-        PreparedStatement preparedStatement;
+    public Integer addData(WatchListEntity data) {
         int result = 0;
-
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, data.getLastWatch());
-            preparedStatement.setBoolean(2, data.getFavorite());
-            preparedStatement.setInt(3, data.getMovie().getId());
-            preparedStatement.setInt(4, data.getUser().getId());
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.save(data);
+            transaction.commit();
+            result = 1;
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
         return result;
     }
 
     @Override
-    public ObservableList<Watchlist> getData() {
-        ObservableList<Watchlist> watchLists = FXCollections.observableArrayList();
+    public ObservableList<WatchListEntity> getData() {
+        ObservableList<WatchListEntity> watchList = FXCollections.observableArrayList();
+        Session session = HibernateUtility.getSession();
 
-        String query = "SELECT * FROM watchlist " +
-                "JOIN movie ON Movie_idMovie = idMovie " +
-                "JOIN user ON User_idUser = idUser";
-        PreparedStatement preparedStatement;
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<WatchListEntity> query = builder.createQuery(WatchListEntity.class);
+        query.from(WatchListEntity.class);
 
-        try {
-            preparedStatement = connection.prepareStatement(query);
-            ResultSet result = preparedStatement.executeQuery();
-            while (result.next()) {
-                watchLists.add(
-                        new Watchlist(
-                                result.getInt("idWatchList"),
-                                result.getInt("LastWatch"),
-                                result.getBoolean("Favorite"),
-                                new Movie(
-                                        result.getInt("idMovie"),
-                                        result.getString("Title"),
-                                        result.getString("Genre"),
-                                        result.getInt("Durasi")
-                                ),
-                                new User(
-                                        result.getInt("idUser"),
-                                        result.getString("UserName"),
-                                        result.getString("UserPassword")
-                                )
-                        )
-                );
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return watchLists;
+        watchList.addAll(session.createQuery(query).getResultList());
+        session.close();
+        return watchList;
     }
 
     @Override
-    public void updateData(Watchlist data) {
-        String query = "UPDATE watchlist " +
-                "SET LastWatch = ?, Favorite = ?, Movie_idMovie = ?, User_idUser = ? " +
-                "WHERE idLastWatch = ?";
-        PreparedStatement preparedStatement;
-
+    public void updateData(WatchListEntity data) {
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, data.getLastWatch());
-            preparedStatement.setBoolean(2, data.getFavorite());
-            preparedStatement.setInt(3, data.getMovie().getId());
-            preparedStatement.setInt(4, data.getUser().getId());
-            preparedStatement.setInt(5, data.getId());
-            int result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.update(data);
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
     }
 
     @Override
-    public Integer delData(Watchlist data) {
-        String query = "DELETE FROM watchlist WHERE idWatchList = ?";
-        PreparedStatement preparedStatement;
+    public Integer delData(WatchListEntity data) {
         int result = 0;
-
+        Session session = HibernateUtility.getSession();
+        Transaction transaction = session.beginTransaction();
         try {
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, data.getId());
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session.delete(data);
+            transaction.commit();
+            result = 1;
+        } catch (Exception e) {
+            transaction.rollback();
         }
+        session.close();
         return result;
     }
 }
